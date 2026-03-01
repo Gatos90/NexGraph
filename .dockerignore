@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.tsbuildinfo
+.git/
+.ralph-tui/
+docs/
+*.md
+!package.json
+!package-lock.json

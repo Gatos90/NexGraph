@@ -1,0 +1,42 @@
+<div class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="dot"></div>
+      NexGraph
+    </div>
+    <div class="auth-subtitle">Code Graph Explorer</div>
+    <div class="auth-server">
+      <label>Server URL</label>
+      <input
+        type="text"
+        [ngModel]="server()"
+        (ngModelChange)="server.set($event)"
+        placeholder="http://localhost:3000"
+        (keydown)="onKeydown($event)"
+      />
+    </div>
+    <label>API Key</label>
+    <input
+      type="password"
+      [ngModel]="apiKey()"
+      (ngModelChange)="apiKey.set($event)"
+      placeholder="nxg_..."
+      (keydown)="onKeydown($event)"
+    />
+    <div class="auth-hint">Enter your NexGraph API key to continue</div>
+    <button
+      class="auth-btn"
+      (click)="connect()"
+      [disabled]="loading() || !apiKey()"
+    >
+      @if (loading()) {
+        Connecting...
+      } @else {
+        Connect
+      }
+    </button>
+    @if (error()) {
+      <div class="auth-error">{{ error() }}</div>
+    }
+  </div>
+</div>

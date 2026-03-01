@@ -1,0 +1,160 @@
+<div class="filter-bar">
+  <span class="filter-label">Layout</span>
+  @for (mode of LAYOUT_MODES; track mode) {
+    <button
+      class="layout-toggle-btn"
+      [class.active]="state.layoutMode() === mode"
+      (click)="setLayout(mode)"
+    >
+      {{ mode === 'force' ? 'Force' : mode === 'flow' ? 'Flow' : 'Components' }}
+    </button>
+  }
+
+  <span class="sep"></span>
+
+  <div class="dropdown-wrap">
+    <button
+      class="dropdown-trigger"
+      [class.open]="openDropdown() === 'nodes'"
+      (click)="toggleDropdown('nodes'); $event.stopPropagation()"
+    >
+      Nodes
+      <span class="count-badge">{{ activeNodeCount }}</span>
+      <span class="chevron">&#9662;</span>
+    </button>
+    @if (openDropdown() === 'nodes') {
+      <div class="dropdown-panel" (click)="$event.stopPropagation()">
+        <div class="dropdown-grid">
+          @for (type of NODE_TYPES; track type) {
+            <button
+              class="filter-btn"
+              [class.active]="isNodeActive(type)"
+              (click)="toggleNode(type)"
+            >
+              <span class="fbdot" [style.background]="NODE_COLORS[type]?.fill"></span>
+              {{ type === 'RouteHandler' ? 'Route' : type }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="dropdown-wrap">
+    <button
+      class="dropdown-trigger"
+      [class.open]="openDropdown() === 'edges'"
+      (click)="toggleDropdown('edges'); $event.stopPropagation()"
+    >
+      Edges
+      <span class="count-badge">{{ activeEdgeCount }}</span>
+      <span class="chevron">&#9662;</span>
+    </button>
+    @if (openDropdown() === 'edges') {
+      <div class="dropdown-panel" (click)="$event.stopPropagation()">
+        <div class="dropdown-grid">
+          @for (type of EDGE_TYPES; track type) {
+            <button
+              class="edge-filter-btn"
+              [class.active]="isEdgeActive(type)"
+              (click)="toggleEdge(type)"
+            >
+              {{ type }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <span class="sep"></span>
+
+  <span class="filter-label">Overlay</span>
+  <button
+    class="edge-filter-btn"
+    [class.active]="state.communityOverlay()"
+    (click)="toggleCommunityOverlay()"
+  >
+    Communities
+  </button>
+  <button
+    class="edge-filter-btn"
+    [class.active]="state.activeProcess() !== null"
+    (click)="onToggleFlows()"
+  >
+    Flows
+  </button>
+  <button
+    class="edge-filter-btn"
+    [class.active]="state.diffImpactActive()"
+    (click)="onToggleDiffImpact()"
+  >
+    Diff Impact
+  </button>
+  <button
+    class="edge-filter-btn"
+    [class.active]="state.gitOverlayMode() !== 'none'"
+    (click)="onToggleGitHistory()"
+  >
+    Git
+  </button>
+
+  <span class="sep"></span>
+
+  <span class="filter-label">Cross-Repo</span>
+  <button
+    class="edge-filter-btn xrepo-btn"
+    [class.active]="isEdgeActive('CROSS_REPO')"
+    (click)="toggleEdge('CROSS_REPO')"
+  >
+    X-REPO
+  </button>
+
+  @if (state.showCrossRepo()) {
+    <div class="confidence-slider-wrap">
+      <span class="filter-label" style="margin: 0">Min</span>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        step="5"
+        [value]="confidencePercent"
+        (input)="onConfidenceChange($event)"
+      />
+      <span class="confidence-val">{{ confidencePercent }}%</span>
+    </div>
+
+    @if (state.connectedRepos().length) {
+      <span class="sep"></span>
+      <span class="filter-label">Repos</span>
+      @for (repo of state.connectedRepos(); track repo.id; let i = $index) {
+        <button
+          class="repo-expand-btn"
+          [class.active]="isRepoExpanded(repo.id)"
+          [class.loading]="isRepoLoading(repo.id)"
+          [disabled]="isRepoLoading(repo.id)"
+          (click)="onToggleRepo(repo)"
+        >
+          @if (isRepoLoading(repo.id)) {
+            <span class="repo-spinner"></span>
+          } @else {
+            <span class="repo-dot" [style.background]="getRepoColor(i)"></span>
+          }
+          {{ repo.name }}
+        </button>
+      }
+      @if (state.connectedRepos().length > 1) {
+        <button
+          class="repo-bulk-btn"
+          [disabled]="anyRepoLoading"
+          (click)="allExpanded ? onCollapseAll() : onExpandAll()"
+        >
+          @if (anyRepoLoading) {
+            <span class="repo-spinner"></span>
+          }
+          {{ allExpanded ? 'Collapse All' : 'Expand All' }}
+        </button>
+      }
+    }
+  }
+</div>

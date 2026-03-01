@@ -1,0 +1,22 @@
+<div class="repo-card" (click)="onClick()">
+  <div class="rc-name">
+    <span class="rc-icon">&#128193;</span>
+    {{ displayName }}
+  </div>
+  <div class="rc-url">{{ repo().url }}</div>
+  <div class="rc-meta">
+    <span class="rc-tag">{{ repo().source_type }}</span>
+    <span class="rc-tag" [class]="statusClass">
+      <span class="rc-dot" [style.background]="statusClass === 'rc-status-indexed' ? 'var(--node-function)' : statusClass === 'rc-status-indexing' ? 'var(--node-folder)' : statusClass === 'rc-status-failed' ? '#ff6060' : 'var(--text-dim)'"></span>
+      {{ indexingStatus }}
+    </span>
+    @if (lastIndexed) {
+      <span class="rc-tag">{{ lastIndexed }}</span>
+    }
+    @if (connectionCount() > 0) {
+      <span class="rc-tag rc-tag-xrepo">
+        &#128279; {{ connectionCount() }}
+      </span>
+    }
+  </div>
+</div>

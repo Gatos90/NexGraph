@@ -1,0 +1,141 @@
+<div class="side-panel" [class.open]="isOpen()">
+  <div class="side-panel-header">
+    <div class="sp-title">
+      {{ nodeName() }}
+      <span
+        class="sp-badge"
+        [style.background]="nodeColor() + '20'"
+        [style.color]="nodeColor()"
+        [style.borderColor]="nodeColor() + '40'"
+      >
+        {{ nodeLabel() }}
+      </span>
+      @if (nodeRepoBadge()) {
+        <span
+          class="sp-repo-badge"
+          [style.background]="nodeRepoColor() ? nodeRepoColor() + '20' : null"
+          [style.color]="nodeRepoColor() || null"
+          [style.borderColor]="nodeRepoColor() ? nodeRepoColor() + '40' : null"
+        >{{ nodeRepoBadge() }}</span>
+      }
+    </div>
+    <button class="sp-close" (click)="close()">&times;</button>
+  </div>
+
+  <div class="sp-content">
+    @if (loading()) {
+      <div class="sp-section">
+        <div class="sp-loading">Loading...</div>
+      </div>
+    }
+
+    <!-- Properties -->
+    @if (properties().length) {
+      <div class="sp-section">
+        <div class="sp-section-title">Properties</div>
+        @for (prop of properties(); track prop.key) {
+          <div class="sp-prop">
+            <span class="sp-prop-key">{{ prop.key }}</span>
+            <span class="sp-prop-val">{{ prop.value }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Component children -->
+    @if (componentChildren().length) {
+      <div class="sp-section">
+        <div class="sp-section-title" style="color: #4a9eff">Component Contents</div>
+        @for (child of componentChildren(); track child.type) {
+          <div class="sp-prop">
+            <span class="sp-prop-key" [style.color]="child.color">{{ child.type }}</span>
+            <span class="sp-prop-val">{{ child.count }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Hub phantoms -->
+    @if (hubPhantoms().length) {
+      <div class="sp-section">
+        <div class="sp-section-title">Linked Symbols ({{ hubPhantoms().length }})</div>
+        <ul class="sp-edge-list">
+          @for (phantom of hubPhantoms(); track phantom.id) {
+            <li class="sp-edge-item" (click)="onPhantomClick(phantom.id)">
+              <span class="sp-edge-type-dot" style="background: #ff4080"></span>
+              <span class="sp-edge-node">{{ phantom.name }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Incoming edges -->
+    @if (incomingEdges().length) {
+      <div class="sp-section">
+        <div class="sp-section-title">
+          <span style="color: #40aaff">&#x25CF;</span>
+          Called by / Used by ({{ incomingEdges().length }})
+        </div>
+        <ul class="sp-edge-list">
+          @for (edge of incomingEdges(); track edge.nodeId) {
+            <li class="sp-edge-item" (click)="onEdgeClick(edge)">
+              <span class="sp-edge-type-dot" [style.background]="edge.nodeColor"></span>
+              <span class="sp-edge-label" [style.background]="edge.edgeColor + '18'" [style.color]="edge.edgeColor">{{ edge.edgeLabel }}</span>
+              <span class="sp-edge-node">{{ edge.nodeName }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Outgoing edges -->
+    @if (outgoingEdges().length) {
+      <div class="sp-section">
+        <div class="sp-section-title">
+          <span style="color: #ff9040">&#x25CF;</span>
+          Calls / Depends on ({{ outgoingEdges().length }})
+        </div>
+        <ul class="sp-edge-list">
+          @for (edge of outgoingEdges(); track edge.nodeId) {
+            <li class="sp-edge-item" (click)="onEdgeClick(edge)">
+              <span class="sp-edge-type-dot" [style.background]="edge.nodeColor"></span>
+              <span class="sp-edge-label" [style.background]="edge.edgeColor + '18'" [style.color]="edge.edgeColor">{{ edge.edgeLabel }}</span>
+              <span class="sp-edge-node">{{ edge.nodeName }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Cross-repo links -->
+    @if (crossRepoLinks().length) {
+      <div class="sp-section">
+        <div class="sp-section-title" style="color: var(--node-xrepo)">
+          Cross-Repo Links ({{ crossRepoLinks().length }})
+        </div>
+        <ul class="sp-edge-list">
+          @for (link of crossRepoLinks(); track link.nodeId) {
+            <li class="sp-edge-item" (click)="onEdgeClick(link)">
+              <span class="sp-edge-type-dot" style="background: var(--node-xrepo)"></span>
+              <span class="sp-edge-label" style="background: #ff408018; color: #ff4080">
+                {{ link.edgeLabel }}
+                @if (link.confidence) {
+                  ({{ (link.confidence * 100) | number: '1.0-0' }}%)
+                }
+              </span>
+              <span class="sp-edge-node">{{ link.nodeName }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- No relationships -->
+    @if (!loading() && !incomingEdges().length && !outgoingEdges().length && !crossRepoLinks().length && !hubPhantoms().length && !componentChildren().length) {
+      <div class="sp-section">
+        <div class="sp-empty">No relationships</div>
+      </div>
+    }
+  </div>
+</div>

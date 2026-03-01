@@ -1,0 +1,28 @@
+<div class="repo-screen">
+  <div class="repo-header">
+    <div class="repo-header-left">
+      <div class="repo-logo">
+        <div class="dot"></div>
+        NexGraph
+      </div>
+      <span class="repo-header-sub">Select a repository</span>
+    </div>
+    <button class="disconnect-btn" (click)="onDisconnect()">Disconnect</button>
+  </div>
+
+  @if (loading()) {
+    <div class="repo-loading">Loading repositories...</div>
+  } @else if (repos().length === 0) {
+    <div class="repo-empty">No repositories found. Add a repository via the API first.</div>
+  } @else {
+    <div class="repo-grid">
+      @for (repo of repos(); track repo.id) {
+        <app-repo-card
+          [repo]="repo"
+          [connectionCount]="connectionCounts()[repo.id] || 0"
+          (selected)="onSelectRepo(repo)"
+        />
+      }
+    </div>
+  }
+</div>

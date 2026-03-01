@@ -1,0 +1,75 @@
+<div class="topbar">
+  <div class="logo" (click)="backToRepos.emit()">
+    <div class="dot"></div>
+    NexGraph
+  </div>
+  <div class="divider"></div>
+  <div class="repo-breadcrumb">
+    <button class="rb-back" (click)="backToRepos.emit()">&#x25C0; Repos</button>
+    <span class="rb-name">{{ repoDisplayName }}</span>
+  </div>
+  <div class="divider"></div>
+  <div class="stats-row">
+    @for (pill of statPills; track pill.label) {
+      <div class="stat-pill">
+        <span class="stat-dot" [style.background]="pill.color"></span>
+        <span class="stat-val">{{ pill.value }}</span>
+        {{ pill.label }}
+      </div>
+    }
+  </div>
+  <app-search-dropdown
+    [repoId]="repo().id"
+    (navigate)="searchNavigate.emit($event)"
+  />
+
+  <div class="spacer"></div>
+
+  <button
+    class="renderer-toggle"
+    [class.webgl]="graphState.rendererMode() === 'webgl'"
+    (click)="toggleRenderer()"
+    [title]="graphState.rendererMode() === 'webgl' ? 'Using WebGL (PixiJS) — click for SVG' : 'Using SVG (D3) — click for WebGL'"
+  >
+    {{ graphState.rendererMode() === 'webgl' ? 'WebGL' : 'SVG' }}
+  </button>
+
+  <div class="ss-controls">
+    <button class="ss-play-btn" title="Start screensaver" (click)="startScreensaver()">
+      &#9654;
+    </button>
+    <button
+      class="ss-menu-btn"
+      [class.open]="ssMenuOpen()"
+      (click)="toggleSsMenu($event)"
+      title="Screensaver settings"
+    >
+      &#9881;
+    </button>
+
+    @if (ssMenuOpen()) {
+      <div class="ss-dropdown" (click)="$event.stopPropagation()">
+        <div class="ss-section-label">Animation Mode</div>
+        @for (m of SS_MODES; track m.value) {
+          <button
+            class="ss-option"
+            [class.active]="screensaver.selectedMode() === m.value"
+            (click)="selectMode(m.value)"
+          >
+            {{ m.label }}
+          </button>
+        }
+        <div class="ss-section-label" style="margin-top: 8px;">Idle Timeout</div>
+        @for (opt of IDLE_OPTIONS; track opt.value) {
+          <button
+            class="ss-option"
+            [class.active]="idle.timeout() === opt.value"
+            (click)="selectIdleTimeout(opt.value)"
+          >
+            {{ opt.label }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>

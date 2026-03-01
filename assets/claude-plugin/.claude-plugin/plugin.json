@@ -1,0 +1,11 @@
+{
+  "name": "nexgraph",
+  "description": "Project-scoped code intelligence for Claude Code via the NexGraph MCP server.",
+  "version": "0.1.0",
+  "author": {
+    "name": "NexGraph"
+  },
+  "homepage": "https://github.com/your-org/nexgraph",
+  "repository": "https://github.com/your-org/nexgraph",
+  "keywords": ["code-intelligence", "mcp", "knowledge-graph", "search", "impact-analysis"]
+}

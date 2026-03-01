@@ -1,0 +1,40 @@
+<div class="search-container">
+  <div class="search-input-row">
+    <span class="search-icon">&#x2315;</span>
+    <input
+      type="text"
+      placeholder="Search codebase..."
+      [value]="query()"
+      (input)="onInput($any($event.target).value)"
+    />
+    <div class="mode-pills">
+      @for (m of modes; track m) {
+        <button
+          class="mode-pill"
+          [class.active]="searchMode() === m"
+          (click)="setMode(m); $event.stopPropagation()"
+        >{{ modeLabels[m] }}</button>
+      }
+    </div>
+  </div>
+  @if (showResults() && results().length) {
+    <div class="search-results">
+      @for (r of results(); track r.file_path) {
+        <div class="search-result-item" (click)="selectResult(r)">
+          <div class="sr-header">
+            <div class="sr-path">{{ r.file_path }}</div>
+            @if (getBadge(r); as badge) {
+              <span class="sr-badge">{{ badge }}</span>
+            }
+          </div>
+          @if (r.symbol_name) {
+            <div class="sr-symbol">{{ r.label }} {{ r.symbol_name }}</div>
+          }
+          @if (r.highlights) {
+            <div class="sr-highlight">{{ r.highlights }}</div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

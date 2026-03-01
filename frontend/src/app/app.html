@@ -1,0 +1,20 @@
+@if (currentScreen() === 'auth') {
+  <app-auth-screen (authenticated)="onAuthenticated()" />
+}
+
+@if (currentScreen() === 'repo-selector') {
+  <app-repo-selector
+    (repoSelected)="onRepoSelected($event)"
+    (disconnect)="onDisconnect()"
+  />
+}
+
+@if (currentScreen() === 'graph') {
+  @if (selectedRepo(); as repo) {
+    <app-graph-shell
+      [repo]="repo"
+      (backToRepos)="onBackToRepos()"
+      (disconnect)="onDisconnect()"
+    />
+  }
+}

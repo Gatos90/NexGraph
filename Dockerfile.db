@@ -1,0 +1,9 @@
+FROM apache/age:latest
+
+# Install pgvector extension for vector similarity search
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-18-pgvector \
+  && rm -rf /var/lib/apt/lists/*
+
+# Preload AGE for all connections so agtype is always available
+CMD ["postgres", "-c", "shared_preload_libraries=age"]

@@ -1,0 +1,59 @@
+<div class="graph-shell">
+  <app-topbar
+    [repo]="repo()"
+    [stats]="graphStats()"
+    (backToRepos)="onBack()"
+    (disconnect)="disconnect.emit()"
+    (searchNavigate)="onSearchNavigate($event)"
+  />
+
+  <app-filter-bar
+    (expandRepo)="onExpandRepo($event)"
+    (collapseRepo)="onCollapseRepo($event)"
+    (expandAllRepos)="onExpandAllRepos()"
+    (collapseAllRepos)="onCollapseAllRepos()"
+    (toggleFlows)="onToggleFlows()"
+    (toggleDiffImpact)="onToggleDiffImpact()"
+    (toggleGitHistory)="onToggleGitHistory()"
+  />
+
+  <div class="canvas-area">
+    <app-graph-canvas />
+
+    @if (!state.loading()) {
+      <app-zoom-controls
+        (zoomIn)="onZoomIn()"
+        (zoomOut)="onZoomOut()"
+        (fitGraph)="onFitGraph()"
+      />
+
+      <app-focus-controls />
+      <app-focus-legend />
+      <app-minimap />
+      <app-repo-legend />
+      <app-community-legend />
+      <app-process-panel />
+      <app-diff-impact-panel />
+      <app-git-history-panel />
+    }
+
+    <app-tooltip />
+
+    <app-side-panel (navigateToNode)="onNavigateToNode($event)" />
+
+    <app-loading-overlay
+      [visible]="state.loading()"
+      message="Loading graph data..."
+    />
+
+    @if (screensaver.active()) {
+      <div class="screensaver-overlay">
+        <div class="screensaver-indicator">
+          <span class="mode-label">{{ screensaver.currentModeLabel }}</span>
+          <span>Move mouse to dismiss</span>
+          <button class="stop-btn" (click)="screensaver.stop()">Stop</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

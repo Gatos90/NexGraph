@@ -1,0 +1,40 @@
+.repo-legend {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.repo-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.repo-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.repo-legend-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.repo-legend-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-left: auto;
+}

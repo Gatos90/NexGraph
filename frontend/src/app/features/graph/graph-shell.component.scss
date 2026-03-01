@@ -1,0 +1,42 @@
+.graph-shell {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+// Angular host elements need explicit display to participate in flex layout
+:host {
+  display: contents;
+}
+
+app-topbar {
+  display: block;
+  flex-shrink: 0;
+  // Topbar has backdrop-filter which creates a stacking context, trapping
+  // dropdown z-indexes inside it.  Elevate the whole topbar above filter-bar
+  // and .canvas-area so dropdowns (search, screensaver) render on top.
+  position: relative;
+  z-index: 12;
+}
+
+app-filter-bar {
+  display: block;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0; // allow flex child to shrink below content size
+
+  app-graph-canvas {
+    display: block;
+    position: absolute;
+    inset: 0;
+  }
+}

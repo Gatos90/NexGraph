@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-tertiary: #1a1a26;
+  --bg-elevated: #22222e;
+  --border: #2a2a3a;
+  --border-bright: #3a3a50;
+  --text-primary: #e8e8f0;
+  --text-secondary: #8888a0;
+  --text-dim: #555568;
+
+  --node-file: #4a9eff;
+  --node-file-glow: #4a9eff40;
+  --node-folder: #f0b840;
+  --node-folder-glow: #f0b84040;
+  --node-function: #40e8a0;
+  --node-function-glow: #40e8a040;
+  --node-code: #b060ff;
+  --node-code-glow: #b060ff40;
+  --node-class: #ff6090;
+  --node-class-glow: #ff609040;
+  --node-interface: #60d0ff;
+  --node-interface-glow: #60d0ff40;
+  --node-method: #80e060;
+  --node-method-glow: #80e06040;
+  --node-route: #ff9040;
+  --node-route-glow: #ff904040;
+  --node-xrepo: #ff4080;
+  --node-xrepo-glow: #ff408040;
+
+  --edge-defines: #40e8a060;
+  --edge-contains: #f0b84040;
+  --edge-imports: #4a9eff60;
+  --edge-calls: #ff609080;
+  --edge-extends: #60d0ff60;
+  --edge-implements: #b060ff60;
+  --edge-exposes: #ff904060;
+  --edge-handles: #ff9040;
+  --edge-xrepo: #ff408080;
+
+  --accent: #4a9eff;
+  --accent-glow: #4a9eff30;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+// Scrollbar
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+
+// Animations
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--accent); }
+  50% { opacity: 0.5; box-shadow: 0 0 8px var(--accent); }
+}

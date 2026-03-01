@@ -1,0 +1,37 @@
+.focus-legend {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  padding: 6px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 85;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  animation: fadeUp 0.25s ease-out;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-line {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.legend-arrow {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.legend-text {
+  color: var(--text-secondary);
+}

@@ -1,0 +1,81 @@
+.repo-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+.repo-header {
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-secondary);
+
+  .repo-header-left {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .repo-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--node-function);
+      box-shadow: 0 0 8px var(--node-function-glow);
+    }
+  }
+
+  .repo-header-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+}
+
+.disconnect-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #ff6060;
+    color: #ff6060;
+  }
+}
+
+.repo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+  padding: 32px;
+  flex: 1;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.repo-loading,
+.repo-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+  font-size: 14px;
+}

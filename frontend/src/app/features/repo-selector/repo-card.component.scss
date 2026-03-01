@@ -1,0 +1,83 @@
+.repo-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 8px 32px rgba(74, 158, 255, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .rc-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .rc-icon {
+      font-size: 14px;
+    }
+  }
+
+  .rc-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rc-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .rc-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+
+    .rc-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+  }
+
+  .rc-tag-xrepo {
+    color: var(--node-xrepo);
+    border-color: var(--node-xrepo);
+  }
+
+  .rc-status-indexed {
+    color: var(--node-function);
+  }
+
+  .rc-status-indexing {
+    color: var(--node-folder);
+  }
+
+  .rc-status-failed {
+    color: #ff6060;
+  }
+}
