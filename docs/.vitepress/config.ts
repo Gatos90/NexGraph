@@ -4,6 +4,7 @@ export default defineConfig({
   title: "NexGraph",
   description:
     "Headless Code Intelligence Engine — Build Knowledge Graphs, Let AI Agents Consume Them",
+  base: "/NexGraph/",
 
   themeConfig: {
     nav: [
@@ -108,7 +109,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: "github", link: "https://github.com/nexgraph/nexgraph" },
+      { icon: "github", link: "https://github.com/Gatos90/NexGraph" },
     ],
 
     search: {

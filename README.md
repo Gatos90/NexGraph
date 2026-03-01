@@ -13,11 +13,12 @@
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
 [![Angular](https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white)](https://angular.dev)
 [![MCP](https://img.shields.io/badge/MCP-24_Tools-8B5CF6)](https://modelcontextprotocol.io)
+[![Docs](https://img.shields.io/badge/Docs-gatos90.github.io/NexGraph-blue)](https://gatos90.github.io/NexGraph/)
 
 **A headless code intelligence engine that builds knowledge graphs from source code.**
 Parse. Index. Let AI agents understand your entire codebase.
 
-[Get Started](#quick-setup) · [Features](#features) · [MCP Tools](#mcp-tools) · [Architecture](#architecture) · [Docs](https://nexgraph.dev)
+[Get Started](#quick-setup) · [Features](#features) · [MCP Tools](#mcp-tools) · [Architecture](#architecture) · [Docs](https://gatos90.github.io/NexGraph/)
 
 </div>
 
@@ -132,7 +133,7 @@ Extract → Parse (AST) → Imports → Call Graph → Routes → Communities �
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/nexgraph/nexgraph.git
+git clone https://github.com/Gatos90/NexGraph.git
 cd nexgraph
 npm install
 
