@@ -95,9 +95,9 @@ export function registerTools(
   // ─── query ──────────────────────────────────────────────────
   server.tool(
     "query",
-    "Search symbols (functions, classes, methods, interfaces) by name across the code graph. Use this as your first step when you know a symbol name (or part of it) and need to find where it's defined, what type it is, and which file it lives in. Returns matching symbols with labels, file paths, and properties. Supports substring matching — e.g., 'login' finds 'postLogin', 'loginHandler', etc.",
+    'Search symbols (functions, classes, methods, interfaces) by name across the code graph. Use this as your first step when you know a symbol name (or part of it) and need to find where it\'s defined, what type it is, and which file it lives in. Returns matching symbols with labels, file paths, and properties. Supports substring matching — e.g., \'login\' finds \'postLogin\', \'loginHandler\', etc.\n\nExample: {"keyword": "login"}',
     {
-      query: z.string().describe("Keyword to search for in symbol names"),
+      keyword: z.string().describe("Keyword to search for in symbol names"),
       repo: z
         .string()
         .optional()
@@ -118,7 +118,7 @@ export function registerTools(
         .default(20)
         .describe("Maximum number of results to return"),
     },
-    async ({ query, repo, label, limit }) => {
+    async ({ keyword, repo, label, limit }) => {
       return withErrorHandling(
         async () => {
           const ctx = await resolveRepoContext(client, repo);
@@ -136,7 +136,7 @@ export function registerTools(
               : limit;
             try {
               const result = await client.listNodes(repoRow.id, {
-                name: query,
+                name: keyword,
                 label,
                 limit: perRepoLimit,
               });
@@ -149,7 +149,7 @@ export function registerTools(
               }
             } catch (err) {
               log.warn(
-                { repo: repoRow.name, query, err },
+                { repo: repoRow.name, keyword, err },
                 "MCP query tool failed for repo",
               );
             }
@@ -166,7 +166,7 @@ export function registerTools(
           });
         },
         "query",
-        { query, repo },
+        { keyword, repo },
       );
     },
   );
@@ -174,7 +174,7 @@ export function registerTools(
   // ─── context ────────────────────────────────────────────────
   server.tool(
     "context",
-    "Get the full relationship map for a symbol — who calls it, what it calls, what it imports/exports, what it extends/implements, and any cross-repo links. Use this when you need to understand a function's role in the codebase before modifying it. Essential for answering 'what does this function interact with?' without reading every file.",
+    'Get the full relationship map for a symbol — who calls it, what it calls, what it imports/exports, what it extends/implements, and any cross-repo links. Use this when you need to understand a function\'s role in the codebase before modifying it. Essential for answering \'what does this function interact with?\' without reading every file.\n\nExample: {"symbol": "handleRequest"}',
     {
       symbol: z.string().describe("The symbol name to get context for"),
       repo: z
@@ -264,7 +264,7 @@ export function registerTools(
   // ─── impact ─────────────────────────────────────────────────
   server.tool(
     "impact",
-    "Analyze the blast radius of changing a symbol — find every function, class, or method that would be affected. Use BEFORE refactoring or modifying a function to know exactly which call sites, subclasses, and implementations need updating. Direction 'callers' = who depends on this (upstream), 'callees' = what this depends on (downstream). Traverses CALLS, EXTENDS, and IMPLEMENTS edges.",
+    'Analyze the blast radius of changing a symbol — find every function, class, or method that would be affected. Use BEFORE refactoring or modifying a function to know exactly which call sites, subclasses, and implementations need updating. Direction \'callers\' = who depends on this (upstream), \'callees\' = what this depends on (downstream). Traverses CALLS, EXTENDS, and IMPLEMENTS edges.\n\nExample: {"symbol": "UserService"}',
     {
       symbol: z.string().describe("The symbol name to analyze impact for"),
       direction: z
@@ -333,7 +333,7 @@ export function registerTools(
   // ─── trace ──────────────────────────────────────────────────
   server.tool(
     "trace",
-    "Trace an execution flow end-to-end starting from any function. Use this to understand the full call chain — e.g., starting from an API handler, trace forward to see every function it calls (DB queries, services, helpers). Direction 'forward' = downstream callees, 'backward' = upstream callers. Automatically follows cross-repo edges (e.g., frontend → backend API calls).",
+    'Trace an execution flow end-to-end starting from any function. Use this to understand the full call chain — e.g., starting from an API handler, trace forward to see every function it calls (DB queries, services, helpers). Direction \'forward\' = downstream callees, \'backward\' = upstream callers. Automatically follows cross-repo edges (e.g., frontend → backend API calls).\n\nExample: {"start_symbol": "loginHandler"}',
     {
       start_symbol: z
         .string()
@@ -398,9 +398,9 @@ export function registerTools(
   // ─── cypher ────────────────────────────────────────────────
   server.tool(
     "cypher",
-    "Execute a raw Cypher query against the code graph for advanced analysis not covered by other tools. The graph uses Apache AGE (PostgreSQL). Node labels: Function, Class, Method, Interface, Variable, TypeAlias, File, RouteHandler. Edge types: CALLS, IMPORTS, EXTENDS, IMPLEMENTS, DEFINES, EXPORTS. Example: MATCH (a)-[:CALLS]->(b) WHERE a.name = 'login' RETURN a, b",
+    'Execute a raw Cypher query against the code graph for advanced analysis not covered by other tools. The graph uses Apache AGE (PostgreSQL). Node labels: Function, Class, Method, Interface, Variable, TypeAlias, File, RouteHandler. Edge types: CALLS, IMPORTS, EXTENDS, IMPLEMENTS, DEFINES, EXPORTS.\n\nExample: {"cypher": "MATCH (n:Function) RETURN n.name LIMIT 5"}',
     {
-      query: z
+      cypher: z
         .string()
         .min(1)
         .max(10000)
@@ -424,7 +424,7 @@ export function registerTools(
           "Column definitions for the result set. Defaults to a single 'result' column.",
         ),
     },
-    async ({ query: cypherQuery, repo, params: cypherParams, columns }) => {
+    async ({ cypher: cypherQuery, repo, params: cypherParams, columns }) => {
       return withErrorHandling(
         async () => {
           const ctx = await resolveRepoContext(client, repo);
@@ -445,7 +445,7 @@ export function registerTools(
           return jsonResponse(result);
         },
         "cypher",
-        { repo, query: cypherQuery },
+        { repo, cypher: cypherQuery },
       );
     },
   );
@@ -453,7 +453,7 @@ export function registerTools(
   // ─── routes ───────────────────────────────────────────────
   server.tool(
     "routes",
-    "List all HTTP API endpoints (Express/Fastify/Hono route handlers) detected in the codebase. Use this to discover the API surface — what endpoints exist, their HTTP methods, and URL patterns. Filter by method (GET, POST) or URL substring (/users, /auth). Essential when adding new endpoints, understanding API structure, or finding where a request is handled.",
+    'List all HTTP API endpoints (Express/Fastify/Hono route handlers) detected in the codebase. Use this to discover the API surface — what endpoints exist, their HTTP methods, and URL patterns. Filter by method (GET, POST) or URL substring (/users, /auth). Essential when adding new endpoints, understanding API structure, or finding where a request is handled.\n\nExample: {} or {"method": "POST", "url_pattern": "/users"}',
     {
       repo: z
         .string()
@@ -552,7 +552,7 @@ export function registerTools(
   // ─── dependencies ─────────────────────────────────────────
   server.tool(
     "dependencies",
-    "Get the full import/dependency tree for a file — what it imports and what imports it. Use this before modifying a file to understand its dependency context: which modules provide its database layer, utilities, types, etc., and which files would be affected if you change its exports. Set depth > 1 to see transitive dependencies.",
+    'Get the full import/dependency tree for a file — what it imports and what imports it. Use this before modifying a file to understand its dependency context: which modules provide its database layer, utilities, types, etc., and which files would be affected if you change its exports. Set depth > 1 to see transitive dependencies.\n\nExample: {"file_path": "src/auth/login.ts"}',
     {
       file_path: z
         .string()
@@ -598,9 +598,9 @@ export function registerTools(
   // ─── search ───────────────────────────────────────────────
   server.tool(
     "search",
-    "Search across all indexed file contents by keyword, semantic meaning, or both. Mode 'keyword' = fast BM25 full-text search (best for exact terms like function names, error messages). Mode 'semantic' = vector similarity search (best for conceptual queries like 'authentication logic' or 'database connection handling'). Mode 'hybrid' = combines both for best results. Searches all repos when repo is omitted.",
+    'Search across all indexed file contents by keyword, semantic meaning, or both. Mode \'keyword\' = fast BM25 full-text search (best for exact terms like function names, error messages). Mode \'semantic\' = vector similarity search (best for conceptual queries like \'authentication logic\' or \'database connection handling\'). Mode \'hybrid\' = combines both for best results. Searches all repos when repo is omitted.\n\nExample: {"keyword": "authentication"}',
     {
-      query: z
+      keyword: z
         .string()
         .min(1)
         .max(1000)
@@ -625,7 +625,7 @@ export function registerTools(
           "Search mode: 'keyword' (BM25 tsvector), 'semantic' (vector cosine similarity), or 'hybrid' (RRF fusion of both)",
         ),
     },
-    async ({ query: searchQuery, repo, limit, mode }) => {
+    async ({ keyword, repo, limit, mode }) => {
       return withErrorHandling(
         async () => {
           if (repo) {
@@ -635,7 +635,7 @@ export function registerTools(
               return errorResponse("Repository not found");
 
             const result = await client.search(repoInfo.id, {
-              query: searchQuery,
+              query: keyword,
               limit,
               mode,
             });
@@ -644,14 +644,14 @@ export function registerTools(
 
           // Multi-repo: use project-level search
           const result = await client.projectSearch({
-            query: searchQuery,
+            query: keyword,
             limit,
             mode,
           });
           return jsonResponse(result);
         },
         "search",
-        { query: searchQuery, repo, mode },
+        { keyword, repo, mode },
       );
     },
   );
@@ -659,7 +659,7 @@ export function registerTools(
   // ─── grep ────────────────────────────────────────────────
   server.tool(
     "grep",
-    "Regex pattern search across all indexed file contents. Returns matching lines with surrounding context, line numbers, and file paths — like ripgrep but over the indexed codebase. Use for precise pattern matching (e.g., 'TODO|FIXME', 'import.*from.*auth', 'console\\.log'). Use file_glob to narrow to specific file types (e.g., '*.ts', 'src/controllers/**').",
+    'Regex pattern search across all indexed file contents. Returns matching lines with surrounding context, line numbers, and file paths — like ripgrep but over the indexed codebase. Use for precise pattern matching (e.g., \'TODO|FIXME\', \'import.*from.*auth\', \'console\\\\.log\'). Use file_glob to narrow to specific file types (e.g., \'*.ts\', \'src/controllers/**\').\n\nExample: {"pattern": "TODO|FIXME"}',
     {
       pattern: z
         .string()
@@ -767,7 +767,7 @@ export function registerTools(
   // ─── read_file ─────────────────────────────────────────
   server.tool(
     "read_file",
-    "Read source code from an indexed file. Returns the file content, detected language, line count, and all symbols (functions, classes, methods) defined in that file with their line positions. Use start_line/end_line to read a specific range for large files. Unlike a raw file read, this also gives you the graph symbols defined in the file so you know what's available to analyze further.",
+    'Read source code from an indexed file. Returns the file content, detected language, line count, and all symbols (functions, classes, methods) defined in that file with their line positions. Use start_line/end_line to read a specific range for large files. Unlike a raw file read, this also gives you the graph symbols defined in the file so you know what\'s available to analyze further.\n\nExample: {"path": "src/index.ts"}',
     {
       path: z
         .string()
@@ -847,7 +847,7 @@ export function registerTools(
   // ─── graph_stats ───────────────────────────────────────
   server.tool(
     "graph_stats",
-    "Get a high-level overview of the codebase: total files, node/edge counts by type (functions, classes, methods, CALLS, IMPORTS), detected languages, and indexing status. Use this as your FIRST call to understand the scale and tech stack of a project before diving in. Returns stats per repo when repo is omitted.",
+    'Get a high-level overview of the codebase: total files, node/edge counts by type (functions, classes, methods, CALLS, IMPORTS), detected languages, and indexing status. Use this as your FIRST call to understand the scale and tech stack of a project before diving in. Returns stats per repo when repo is omitted.\n\nExample: {}',
     {
       repo: z
         .string()
@@ -898,7 +898,7 @@ export function registerTools(
   // ─── cross_repo_connections ────────────────────────────
   server.tool(
     "cross_repo_connections",
-    "Show how repositories in a project are linked together — e.g., frontend calling backend API endpoints, shared type definitions between repos. Returns connection rules and resolved edge counts (CROSS_REPO_CALLS, CROSS_REPO_MIRRORS). Use this to understand cross-repo dependencies before making changes that might break consumers in other repos.",
+    'Show how repositories in a project are linked together — e.g., frontend calling backend API endpoints, shared type definitions between repos. Returns connection rules and resolved edge counts (CROSS_REPO_CALLS, CROSS_REPO_MIRRORS). Use this to understand cross-repo dependencies before making changes that might break consumers in other repos.\n\nExample: {}',
     {
       repo: z
         .string()
@@ -932,7 +932,7 @@ export function registerTools(
   // ─── architecture_check ──────────────────────────────────────
   server.tool(
     "architecture_check",
-    "Check for architectural layer violations — find places where code breaks intended dependency rules (e.g., 'domain layer must not import from infrastructure'). Define layers by file glob patterns and forbidden dependency rules. Returns specific violations with file paths and function names. Use during code review or before adding new imports to ensure clean architecture.",
+    'Check for architectural layer violations — find places where code breaks intended dependency rules (e.g., \'domain layer must not import from infrastructure\'). Define layers by file glob patterns and forbidden dependency rules. Returns specific violations with file paths and function names. Use during code review or before adding new imports to ensure clean architecture.\n\nExample: {}',
     {
       repo: z
         .string()
@@ -992,7 +992,7 @@ export function registerTools(
   // ─── communities ──────────────────────────────────────────────
   server.tool(
     "communities",
-    "Discover the domain-driven module structure of the codebase. Communities are auto-detected clusters of related symbols (grouped by call patterns using the Louvain algorithm). Each community has a heuristic label, keywords, cohesion score, and member count. Use this to understand which parts of the codebase belong together — e.g., 'authentication', 'delivery-notes', 'user-management'. Fetch a specific community_id to see all its member symbols.",
+    'Discover the domain-driven module structure of the codebase. Communities are auto-detected clusters of related symbols (grouped by call patterns using the Louvain algorithm). Each community has a heuristic label, keywords, cohesion score, and member count. Use this to understand which parts of the codebase belong together — e.g., \'authentication\', \'delivery-notes\', \'user-management\'. Fetch a specific community_id to see all its member symbols.\n\nExample: {}',
     {
       repo: z
         .string()
@@ -1051,7 +1051,7 @@ export function registerTools(
   // ─── processes ──────────────────────────────────────────────────
   server.tool(
     "processes",
-    "List the critical execution paths detected in the codebase — multi-step flows from entry points to terminal functions. Each process shows the entry function, terminal function, step count, and whether it stays within one community or crosses boundaries. Use this to understand the most important execution flows (e.g., 'login request → auth check → DB query → response'). Fetch a specific process_id to see the full ordered step sequence.",
+    'List the critical execution paths detected in the codebase — multi-step flows from entry points to terminal functions. Each process shows the entry function, terminal function, step count, and whether it stays within one community or crosses boundaries. Use this to understand the most important execution flows (e.g., \'login request → auth check → DB query → response\'). Fetch a specific process_id to see the full ordered step sequence.\n\nExample: {}',
     {
       repo: z
         .string()
@@ -1115,7 +1115,7 @@ export function registerTools(
   // ─── rename ──────────────────────────────────────────────────
   server.tool(
     "rename",
-    "Safely rename a symbol across all files — finds every reference via the code graph (definitions, call sites, imports, type references, overrides) with confidence scores per edit. Always use dry_run=true first to preview changes before applying. Much more reliable than regex find-replace because it uses graph edges to find actual references, not just string matches.",
+    'Safely rename a symbol across all files — finds every reference via the code graph (definitions, call sites, imports, type references, overrides) with confidence scores per edit. Always use dry_run=true first to preview changes before applying. Much more reliable than regex find-replace because it uses graph edges to find actual references, not just string matches.\n\nExample: {"symbol": "oldName", "new_name": "newName", "dry_run": true}',
     {
       symbol: z.string().min(1).describe("The symbol name to rename"),
       new_name: z
@@ -1192,7 +1192,7 @@ export function registerTools(
   // ─── detect_changes ─────────────────────────────────────────
   server.tool(
     "detect_changes",
-    "Analyze uncommitted git changes: maps modified lines to affected symbols, traces their impact through the call graph, and assesses risk level. Use this for pre-commit review or PR analysis — it tells you not just what changed, but what else in the codebase is affected by those changes. Scope: 'all' (working tree vs HEAD), 'staged', 'unstaged', or 'compare' (against a specific ref like 'main').",
+    'Analyze uncommitted git changes: maps modified lines to affected symbols, traces their impact through the call graph, and assesses risk level. Use this for pre-commit review or PR analysis — it tells you not just what changed, but what else in the codebase is affected by those changes. Scope: \'all\' (working tree vs HEAD), \'staged\', \'unstaged\', or \'compare\' (against a specific ref like \'main\').\n\nExample: {"repo": "my-app"}',
     {
       repo: z
         .string()
@@ -1251,7 +1251,7 @@ export function registerTools(
   // ─── orphans ──────────────────────────────────────────────
   server.tool(
     "orphans",
-    "Find dead code — symbols (functions, classes, methods) that have no incoming edges, meaning nothing in the codebase calls or references them. Use this for code cleanup: identify unused functions that can be safely removed, unexported classes that are never instantiated, or leftover code from deleted features.",
+    'Find dead code — symbols (functions, classes, methods) that have no incoming edges, meaning nothing in the codebase calls or references them. Use this for code cleanup: identify unused functions that can be safely removed, unexported classes that are never instantiated, or leftover code from deleted features.\n\nExample: {}',
     {
       repo: z
         .string()
@@ -1298,7 +1298,7 @@ export function registerTools(
   // ─── edges ────────────────────────────────────────────────
   server.tool(
     "edges",
-    "List relationships between symbols in the code graph, filtered by type and source. Edge types: CALLS (function invocations), IMPORTS (file-level imports), EXTENDS (class inheritance), IMPLEMENTS (interface implementations), DEFINES (file → symbol), EXPORTS (module exports). Use for coupling analysis — e.g., list all CALLS from Function nodes to see the busiest callers.",
+    'List relationships between symbols in the code graph, filtered by type and source. Edge types: CALLS (function invocations), IMPORTS (file-level imports), EXTENDS (class inheritance), IMPLEMENTS (interface implementations), DEFINES (file → symbol), EXPORTS (module exports). Use for coupling analysis — e.g., list all CALLS from Function nodes to see the busiest callers.\n\nExample: {"repo": "my-app", "edge_type": "CALLS"}',
     {
       repo: z
         .string()
@@ -1347,7 +1347,7 @@ export function registerTools(
   // ─── path ─────────────────────────────────────────────────
   server.tool(
     "path",
-    "Find the shortest connection path between two symbols in the code graph. Use this to understand how two seemingly unrelated functions are connected — e.g., how does 'loginHandler' eventually reach 'sendEmail'? Returns the chain of intermediate symbols and edges. Useful for understanding coupling and for planning refactoring boundaries.",
+    'Find the shortest connection path between two symbols in the code graph. Use this to understand how two seemingly unrelated functions are connected — e.g., how does \'loginHandler\' eventually reach \'sendEmail\'? Returns the chain of intermediate symbols and edges. Useful for understanding coupling and for planning refactoring boundaries.\n\nExample: {"repo": "my-app", "from_symbol": "login", "to_symbol": "sendEmail"}',
     {
       repo: z.string().describe("Repository name."),
       from_symbol: z
@@ -1409,7 +1409,7 @@ export function registerTools(
   // ─── git_history ──────────────────────────────────────────
   server.tool(
     "git_history",
-    "Get git history stats per file: authors, commit counts, and last modification dates. Use this to find code hotspots (frequently changed files = higher risk), identify domain experts (who authored/modified a file most), and assess code freshness (stale files may need updating). Filter by file_path for a specific file's history.",
+    'Get git history stats per file: authors, commit counts, and last modification dates. Use this to find code hotspots (frequently changed files = higher risk), identify domain experts (who authored/modified a file most), and assess code freshness (stale files may need updating). Filter by file_path for a specific file\'s history.\n\nExample: {"repo": "my-app"}',
     {
       repo: z.string().describe("Repository name."),
       file_path: z
@@ -1448,7 +1448,7 @@ export function registerTools(
   // ─── git_timeline ─────────────────────────────────────────
   server.tool(
     "git_timeline",
-    "Get the chronological commit timeline showing which files changed together in each commit. Use this to understand co-change patterns — files that frequently change together are likely coupled, even if they don't directly import each other. Filter by date range with 'since' and 'until' parameters.",
+    'Get the chronological commit timeline showing which files changed together in each commit. Use this to understand co-change patterns — files that frequently change together are likely coupled, even if they don\'t directly import each other. Filter by date range with \'since\' and \'until\' parameters.\n\nExample: {"repo": "my-app"}',
     {
       repo: z.string().describe("Repository name."),
       since: z
@@ -1494,7 +1494,7 @@ export function registerTools(
   // ─── nodes ────────────────────────────────────────────────
   server.tool(
     "nodes",
-    "List all symbols in the code graph with powerful filtering. Filter by label (Function, Class, Method, Interface, TypeAlias, Variable), file_path, or exported status. Use this to explore a file's symbols, find all exported functions, or paginate through all classes in the codebase. Returns symbol metadata including name, file path, line numbers, and properties.",
+    'List all symbols in the code graph with powerful filtering. Filter by label (Function, Class, Method, Interface, TypeAlias, Variable), file_path, or exported status. Use this to explore a file\'s symbols, find all exported functions, or paginate through all classes in the codebase. Returns symbol metadata including name, file path, line numbers, and properties.\n\nExample: {"repo": "my-app", "label": "Function"}',
     {
       repo: z.string().describe("Repository name."),
       label: z
@@ -1551,7 +1551,7 @@ export function registerTools(
   // ─── file_tree ────────────────────────────────────────────
   server.tool(
     "file_tree",
-    "Browse the directory structure of a repository without reading file contents. Returns a hierarchical tree or flat file list with detected languages. Use this to understand project layout, discover where code lives (e.g., 'show me all TypeScript files under src/controllers'), or navigate an unfamiliar codebase. Filter by path (subdirectory) and language.",
+    'Browse the directory structure of a repository without reading file contents. Returns a hierarchical tree or flat file list with detected languages. Use this to understand project layout, discover where code lives (e.g., \'show me all TypeScript files under src/controllers\'), or navigate an unfamiliar codebase. Filter by path (subdirectory) and language.\n\nExample: {"repo": "my-app"}',
     {
       repo: z.string().describe("Repository name."),
       path: z

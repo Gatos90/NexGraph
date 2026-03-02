@@ -203,7 +203,7 @@ describe("MCP Tools", () => {
       });
 
       const handler = tools.get("query")!.handler;
-      const result = await handler({ query: "Request", limit: 20 });
+      const result = await handler({ keyword: "Request", limit: 20 });
       const body = parseToolResult(result);
 
       expect(body.symbols).toHaveLength(2);
@@ -215,7 +215,7 @@ describe("MCP Tools", () => {
       m(mockClient).getAllRepos.mockResolvedValueOnce([]);
 
       const handler = tools.get("query")!.handler;
-      const result = await handler({ query: "test", limit: 20 });
+      const result = await handler({ keyword: "test", limit: 20 });
       const body = parseToolResult(result);
 
       expect(body.error).toContain("No indexed repositories found");
@@ -230,7 +230,7 @@ describe("MCP Tools", () => {
 
       const handler = tools.get("query")!.handler;
       const result = await handler({
-        query: "My",
+        keyword: "My",
         label: "Class",
         limit: 20,
       });
@@ -256,7 +256,7 @@ describe("MCP Tools", () => {
       });
 
       const handler = tools.get("query")!.handler;
-      const result = await handler({ query: "handle", limit: 20 });
+      const result = await handler({ keyword: "handle", limit: 20 });
       const body = parseToolResult(result);
 
       expect(body.symbols).toHaveLength(2);
@@ -564,7 +564,7 @@ describe("MCP Tools", () => {
 
       const handler = tools.get("cypher")!.handler;
       const result = await handler({
-        query: "MATCH (n) RETURN n LIMIT 1",
+        cypher: "MATCH (n) RETURN n LIMIT 1",
         repo: "my-repo",
       });
       const body = parseToolResult(result);
@@ -583,7 +583,7 @@ describe("MCP Tools", () => {
 
       const handler = tools.get("cypher")!.handler;
       const result = await handler({
-        query: "MATCH (n) RETURN n",
+        cypher: "MATCH (n) RETURN n",
       });
       const body = parseToolResult(result);
 
@@ -598,7 +598,7 @@ describe("MCP Tools", () => {
 
       const handler = tools.get("cypher")!.handler;
       const result = await handler({
-        query: "INVALID CYPHER",
+        cypher: "INVALID CYPHER",
         repo: "my-repo",
       });
       const body = parseToolResult(result);
@@ -616,7 +616,7 @@ describe("MCP Tools", () => {
 
       const handler = tools.get("cypher")!.handler;
       await handler({
-        query: "MATCH (n) RETURN n.name AS name, count(n) AS count",
+        cypher: "MATCH (n) RETURN n.name AS name, count(n) AS count",
         repo: "my-repo",
         columns: [{ name: "name" }, { name: "count" }],
       });
@@ -794,7 +794,7 @@ describe("MCP Tools", () => {
 
       const handler = tools.get("search")!.handler;
       const result = await handler({
-        query: "auth",
+        keyword: "auth",
         repo: "my-repo",
         limit: 20,
         mode: "keyword",
@@ -829,7 +829,7 @@ describe("MCP Tools", () => {
 
       const handler = tools.get("search")!.handler;
       const result = await handler({
-        query: "auth",
+        keyword: "auth",
         limit: 20,
         mode: "keyword",
       });
@@ -845,7 +845,7 @@ describe("MCP Tools", () => {
 
       const handler = tools.get("search")!.handler;
       const result = await handler({
-        query: "test",
+        keyword: "test",
         repo: "nonexistent",
         limit: 20,
         mode: "keyword",
@@ -862,7 +862,7 @@ describe("MCP Tools", () => {
 
       const handler = tools.get("search")!.handler;
       const result = await handler({
-        query: "test",
+        keyword: "test",
         repo: "my-repo",
         limit: 20,
         mode: "keyword",

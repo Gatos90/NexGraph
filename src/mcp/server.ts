@@ -11,7 +11,7 @@ export function createMcpServer(projectId: string, apiClient: NexGraphApiClient)
 
   const server = new McpServer({
     name: "nexgraph",
-    version: "0.1.0",
+    version: "0.3.0",
   }, {
     capabilities: {
       logging: {},
