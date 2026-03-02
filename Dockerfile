@@ -1,5 +1,5 @@
 # ---- Build stage ----
-FROM node:20-slim AS build
+FROM node:22-slim AS build
 
 # tree-sitter native addons need python3, make, g++
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,7 +17,7 @@ COPY vendor ./vendor
 RUN npm run build
 
 # ---- Prod dependencies stage ----
-FROM node:20-slim AS deps
+FROM node:22-slim AS deps
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ \
@@ -28,7 +28,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --legacy-peer-deps
 
 # ---- Production stage ----
-FROM node:20-slim
+FROM node:22-slim
 
 # git + ca-certificates needed at runtime for git_url source extraction (simple-git)
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
