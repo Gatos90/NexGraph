@@ -5,6 +5,8 @@ dist/
 .git/
 .ralph-tui/
 docs/
+frontend/
+testrepos/
 *.md
 !package.json
 !package-lock.json

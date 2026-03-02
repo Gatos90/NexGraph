@@ -53,6 +53,13 @@ interface CallSite {
   line: number;
 }
 
+interface PropertyTypeInfo {
+  className: string;      // e.g. "AppComponent", "Handler", "MyStruct"
+  propertyName: string;   // e.g. "authService", "db", "service"
+  typeName: string;       // e.g. "AuthService", "Database", "MyService"
+  filePath: string;
+}
+
 export interface CallGraphResult {
   callsEdgeCount: number;
   extendsEdgeCount: number;
@@ -197,6 +204,124 @@ function parseCallTarget(
   }
 
   return null;
+}
+
+// ─── Property Type Extraction (TS/JS) ────────────────────────
+
+function extractSimpleTypeName(typeNode: SyntaxNode): string | null {
+  if (typeNode.type === "type_identifier" || typeNode.type === "identifier") {
+    return typeNode.text;
+  }
+  if (typeNode.type === "generic_type") {
+    const nameNode = typeNode.childForFieldName("name") ?? typeNode.namedChildren[0];
+    return nameNode?.text ?? null;
+  }
+  if (typeNode.type === "nested_type_identifier") {
+    const children = typeNode.namedChildren;
+    return children.length > 0 ? children[children.length - 1].text : null;
+  }
+  return null;
+}
+
+function extractTsJsPropertyTypes(
+  rootNode: SyntaxNode,
+  filePath: string,
+): PropertyTypeInfo[] {
+  const results: PropertyTypeInfo[] = [];
+
+  function visitClass(classNode: SyntaxNode): void {
+    const className = classNode.childForFieldName("name")?.text;
+    if (!className) return;
+
+    const body = classNode.childForFieldName("body");
+    if (!body) return;
+
+    for (const member of body.namedChildren) {
+      // Pattern 1: Constructor parameter injection
+      // constructor(private authService: AuthService) {}
+      if (member.type === "method_definition") {
+        const methodName = member.childForFieldName("name")?.text;
+        if (methodName === "constructor") {
+          const params = member.childForFieldName("parameters");
+          if (params) {
+            for (const param of params.namedChildren) {
+              if (param.type !== "required_parameter") continue;
+              // Check for accessibility modifier (private/public/protected) or readonly
+              let hasPromotion = false;
+              for (const child of param.children) {
+                if (child.type === "accessibility_modifier" || child.type === "readonly") {
+                  hasPromotion = true;
+                  break;
+                }
+              }
+              if (!hasPromotion) continue;
+
+              const paramName = param.childForFieldName("name") ?? param.childForFieldName("pattern");
+              const typeAnnotation = param.children.find(c => c.type === "type_annotation");
+              if (paramName && typeAnnotation) {
+                const typeNode = typeAnnotation.namedChildren[0];
+                if (typeNode) {
+                  const typeName = extractSimpleTypeName(typeNode);
+                  if (typeName) {
+                    results.push({ className, propertyName: paramName.text, typeName, filePath });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Pattern 2: inject() functional injection (Angular 14+)
+      // private authService = inject(AuthService);
+      if (member.type === "public_field_definition") {
+        const propName = member.childForFieldName("name")?.text;
+        const value = member.childForFieldName("value");
+        if (propName && value?.type === "call_expression") {
+          const fn = value.childForFieldName("function");
+          if (fn?.text === "inject") {
+            const args = value.childForFieldName("arguments");
+            if (args) {
+              const firstArg = args.namedChildren[0];
+              if (firstArg?.type === "identifier") {
+                results.push({ className, propertyName: propName, typeName: firstArg.text, filePath });
+                continue; // Skip Pattern 3 check for this member
+              }
+            }
+          }
+        }
+
+        // Pattern 3: Typed property declaration (no initializer)
+        // private authService: AuthService;
+        if (propName && !value) {
+          const typeAnnotation = member.children.find(c => c.type === "type_annotation");
+          if (typeAnnotation) {
+            const typeNode = typeAnnotation.namedChildren[0];
+            if (typeNode) {
+              const typeName = extractSimpleTypeName(typeNode);
+              if (typeName) {
+                results.push({ className, propertyName: propName, typeName, filePath });
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (const child of rootNode.namedChildren) {
+    if (child.type === "class_declaration" || child.type === "abstract_class_declaration") {
+      visitClass(child);
+    } else if (child.type === "export_statement") {
+      for (const inner of child.namedChildren) {
+        if (inner.type === "class_declaration" || inner.type === "abstract_class_declaration") {
+          visitClass(inner);
+        }
+      }
+    }
+  }
+
+  return results;
 }
 
 // ─── AST Inheritance Extraction (TS/JS) ─────────────────────
@@ -434,6 +559,120 @@ function extractPythonInheritance(
   return results;
 }
 
+function extractPythonPropertyTypes(
+  rootNode: SyntaxNode,
+  filePath: string,
+): PropertyTypeInfo[] {
+  const results: PropertyTypeInfo[] = [];
+
+  function visitClass(node: SyntaxNode): void {
+    const className = node.childForFieldName("name")?.text;
+    if (!className) return;
+
+    const body = node.childForFieldName("body");
+    if (!body) return;
+
+    for (const member of body.namedChildren) {
+      // Pattern 1: Class-level type annotation
+      // user_service: UserService
+      if (member.type === "expression_statement") {
+        const inner = member.namedChildren[0];
+        if (inner?.type === "type") {
+          // bare annotation: name: Type
+          const nameNode = inner.namedChildren[0];
+          const typeNode = inner.namedChildren[1];
+          if (nameNode?.type === "identifier" && typeNode) {
+            const typeName = typeNode.type === "identifier" ? typeNode.text : typeNode.text;
+            if (typeName && /^[A-Z]/.test(typeName)) {
+              results.push({ className, propertyName: nameNode.text, typeName, filePath });
+            }
+          }
+        }
+        // Annotated assignment: name: Type = value
+        if (inner?.type === "assignment") {
+          const left = inner.childForFieldName("left");
+          const typeNode = inner.childForFieldName("type");
+          if (left?.type === "identifier" && typeNode) {
+            const typeName = typeNode.text;
+            if (typeName && /^[A-Z]/.test(typeName)) {
+              results.push({ className, propertyName: left.text, typeName, filePath });
+            }
+          }
+        }
+      }
+
+      // Pattern 2: __init__ parameter types matched to self.X = param assignments
+      if (member.type === "function_definition" || member.type === "decorated_definition") {
+        const funcDef = member.type === "decorated_definition"
+          ? member.namedChildren.find(c => c.type === "function_definition")
+          : member;
+        if (!funcDef) continue;
+
+        const funcName = funcDef.childForFieldName("name")?.text;
+        if (funcName !== "__init__") continue;
+
+        // Build param name -> type name map from typed parameters
+        const paramTypeMap = new Map<string, string>();
+        const params = funcDef.childForFieldName("parameters");
+        if (params) {
+          for (const p of params.namedChildren) {
+            if (p.type === "typed_parameter" || p.type === "typed_default_parameter") {
+              const pName = p.namedChildren.find(c => c.type === "identifier");
+              const pType = p.children.find(c => c.type === "type");
+              if (pName && pType) {
+                const typeText = pType.text;
+                if (/^[A-Z]/.test(typeText)) {
+                  paramTypeMap.set(pName.text, typeText);
+                }
+              }
+            }
+          }
+        }
+
+        if (paramTypeMap.size === 0) continue;
+
+        // Scan body for self.X = param assignments
+        const funcBody = funcDef.childForFieldName("body");
+        if (!funcBody) continue;
+
+        for (const stmt of funcBody.namedChildren) {
+          if (stmt.type !== "expression_statement") continue;
+          const assign = stmt.namedChildren[0];
+          if (assign?.type !== "assignment") continue;
+
+          const left = assign.childForFieldName("left");
+          const right = assign.childForFieldName("right");
+          if (!left || !right) continue;
+
+          // left must be self.X (attribute with object=self)
+          if (left.type === "attribute") {
+            const obj = left.childForFieldName("object");
+            const attr = left.childForFieldName("attribute");
+            if (obj?.text === "self" && attr && right.type === "identifier") {
+              const typeName = paramTypeMap.get(right.text);
+              if (typeName) {
+                results.push({ className, propertyName: attr.text, typeName, filePath });
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  function visit(node: SyntaxNode): void {
+    if (node.type === "class_definition") {
+      visitClass(node);
+    }
+    for (const child of node.namedChildren) {
+      visit(child);
+    }
+  }
+
+  visit(rootNode);
+  return results;
+}
+
 // ─── Java Call Extraction ───────────────────────────────────
 
 function extractJavaCallSites(
@@ -563,6 +802,53 @@ function extractJavaInheritance(
       // Interface extending interfaces → uses EXTENDS semantically
       if (interfaces.length > 0) {
         results.push({ className: name, superClass: interfaces[0], interfaces: interfaces.slice(1), filePath, decorators: [] });
+      }
+    }
+
+    for (const child of node.namedChildren) {
+      visit(child);
+    }
+  }
+
+  visit(rootNode);
+  return results;
+}
+
+function extractJavaPropertyTypes(
+  rootNode: SyntaxNode,
+  filePath: string,
+): PropertyTypeInfo[] {
+  const results: PropertyTypeInfo[] = [];
+
+  function visit(node: SyntaxNode): void {
+    if (node.type === "class_declaration" || node.type === "enum_declaration" || node.type === "record_declaration") {
+      const className = node.childForFieldName("name")?.text;
+      if (className) {
+        const body = node.childForFieldName("body");
+        if (body) {
+          for (const member of body.namedChildren) {
+            if (member.type === "field_declaration") {
+              const typeNode = member.childForFieldName("type");
+              if (!typeNode) continue;
+
+              let typeName: string;
+              if (typeNode.type === "generic_type") {
+                typeName = typeNode.namedChildren[0]?.text ?? typeNode.text;
+              } else {
+                typeName = typeNode.text;
+              }
+
+              for (const child of member.namedChildren) {
+                if (child.type === "variable_declarator") {
+                  const fieldName = child.childForFieldName("name")?.text;
+                  if (fieldName) {
+                    results.push({ className, propertyName: fieldName, typeName, filePath });
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
 
@@ -708,6 +994,45 @@ function extractGoInheritance(
               filePath,
               decorators: [],
             });
+          }
+        }
+      }
+    }
+    for (const child of node.namedChildren) {
+      visit(child);
+    }
+  }
+
+  visit(rootNode);
+  return results;
+}
+
+function extractGoPropertyTypes(
+  rootNode: SyntaxNode,
+  filePath: string,
+): PropertyTypeInfo[] {
+  const results: PropertyTypeInfo[] = [];
+
+  function visit(node: SyntaxNode): void {
+    if (node.type === "type_declaration") {
+      for (const spec of node.namedChildren) {
+        if (spec.type === "type_spec") {
+          const className = spec.childForFieldName("name")?.text;
+          const typeNode = spec.childForFieldName("type");
+          if (!className || !typeNode || typeNode.type !== "struct_type") continue;
+
+          const fieldList = typeNode.namedChildren.find(c => c.type === "field_declaration_list");
+          if (!fieldList) continue;
+
+          for (const field of fieldList.namedChildren) {
+            if (field.type !== "field_declaration") continue;
+            const fieldName = field.childForFieldName("name");
+            const fieldType = field.childForFieldName("type");
+            // Skip embedded fields (no name)
+            if (!fieldName || !fieldType) continue;
+            // Strip pointer prefix: *Foo -> Foo
+            const typeName = fieldType.text.replace(/^\*/, "");
+            results.push({ className, propertyName: fieldName.text, typeName, filePath });
           }
         }
       }
@@ -877,11 +1202,56 @@ function extractRustInheritance(
   return results;
 }
 
+function extractRustPropertyTypes(
+  rootNode: SyntaxNode,
+  filePath: string,
+): PropertyTypeInfo[] {
+  const results: PropertyTypeInfo[] = [];
+
+  function visit(node: SyntaxNode): void {
+    if (node.type === "struct_item") {
+      const className = node.childForFieldName("name")?.text;
+      if (!className) return;
+
+      const body = node.childForFieldName("body");
+      // Skip tuple structs (ordered_field_declaration_list)
+      if (!body || body.type !== "field_declaration_list") return;
+
+      for (const field of body.namedChildren) {
+        if (field.type !== "field_declaration") continue;
+        const fieldName = field.childForFieldName("name")?.text;
+        const typeNode = field.childForFieldName("type");
+        if (!fieldName || !typeNode) continue;
+
+        let typeName: string;
+        if (typeNode.type === "generic_type") {
+          typeName = typeNode.namedChildren[0]?.text ?? typeNode.text;
+        } else if (typeNode.type === "reference_type") {
+          // &Type or &mut Type — extract inner type
+          const inner = typeNode.namedChildren[typeNode.namedChildren.length - 1];
+          typeName = inner?.text ?? typeNode.text;
+        } else {
+          typeName = typeNode.text;
+        }
+        results.push({ className, propertyName: fieldName, typeName, filePath });
+      }
+    }
+
+    for (const child of node.namedChildren) {
+      visit(child);
+    }
+  }
+
+  visit(rootNode);
+  return results;
+}
+
 // ─── Unified Multi-Language Dispatcher ──────────────────────
 
 interface LanguageCallData {
   callSites: CallSite[];
   inheritance: InheritanceInfo[];
+  propertyTypes: PropertyTypeInfo[];
 }
 
 function extractLanguageCallData(
@@ -895,29 +1265,34 @@ function extractLanguageCallData(
       return {
         callSites: extractCallSites(rootNode, filePath),
         inheritance: extractInheritance(rootNode, filePath),
+        propertyTypes: extractTsJsPropertyTypes(rootNode, filePath),
       };
     case "python":
       return {
         callSites: extractPythonCallSites(rootNode, filePath),
         inheritance: extractPythonInheritance(rootNode, filePath),
+        propertyTypes: extractPythonPropertyTypes(rootNode, filePath),
       };
     case "java":
       return {
         callSites: extractJavaCallSites(rootNode, filePath),
         inheritance: extractJavaInheritance(rootNode, filePath),
+        propertyTypes: extractJavaPropertyTypes(rootNode, filePath),
       };
     case "go":
       return {
         callSites: extractGoCallSites(rootNode, filePath),
         inheritance: extractGoInheritance(rootNode, filePath),
+        propertyTypes: extractGoPropertyTypes(rootNode, filePath),
       };
     case "rust":
       return {
         callSites: extractRustCallSites(rootNode, filePath),
         inheritance: extractRustInheritance(rootNode, filePath),
+        propertyTypes: extractRustPropertyTypes(rootNode, filePath),
       };
     default:
-      return { callSites: [], inheritance: [] };
+      return { callSites: [], inheritance: [], propertyTypes: [] };
   }
 }
 
@@ -959,7 +1334,7 @@ function levenshteinSimilarity(a: string, b: string): number {
 
 // ─── Three-Tier Call Resolution ─────────────────────────────
 
-type ResolutionMethod = "exact_import" | "fuzzy" | "heuristic";
+type ResolutionMethod = "property_type" | "exact_import" | "fuzzy" | "heuristic";
 
 interface ResolvedCall {
   callerId: number;
@@ -974,6 +1349,7 @@ function resolveCallsForFile(
   allSymbols: Map<string, SymbolInfo[]>,
   importedFiles: Set<string>,
   filePath: string,
+  propertyTypeMap: Map<string, string>,
 ): ResolvedCall[] {
   const resolved: ResolvedCall[] = [];
   const edgeSet = new Set<string>();
@@ -982,6 +1358,22 @@ function resolveCallsForFile(
     // Find the caller symbol
     const caller = findCallerSymbol(call, callerSymbols);
     if (!caller) continue;
+
+    // Tier 0: Property-type resolution (confidence 0.92)
+    const propertyTypeMatch = resolvePropertyType(call, allSymbols, propertyTypeMap);
+    if (propertyTypeMatch) {
+      const key = `${caller.id}->${propertyTypeMatch.id}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        resolved.push({
+          callerId: caller.id,
+          calleeId: propertyTypeMatch.id,
+          confidence: 0.92,
+          method: "property_type",
+        });
+      }
+      continue;
+    }
 
     // Tier 1: Exact match via import map (confidence 0.90–0.95)
     const exactMatch = resolveExact(call, allSymbols, importedFiles, filePath);
@@ -1148,6 +1540,62 @@ function resolveHeuristic(
   }
 
   return bestCandidate;
+}
+
+// ─── Property-Type Resolution (Tier 0) ──────────────────────
+
+function extractPropertyName(qualifier: string): string | null {
+  // Pattern 1: this.X (TS/JS, Java)
+  if (qualifier.startsWith("this.")) {
+    const prop = qualifier.slice(5);
+    return prop.includes(".") ? null : prop || null;
+  }
+  // Pattern 2: self.X (Python, Rust)
+  if (qualifier.startsWith("self.")) {
+    const prop = qualifier.slice(5);
+    return prop.includes(".") ? null : prop || null;
+  }
+  // Pattern 3: <receiver>.X (Go-style — any single-dot qualifier)
+  const dotIndex = qualifier.indexOf(".");
+  if (dotIndex > 0) {
+    const prop = qualifier.slice(dotIndex + 1);
+    return prop.includes(".") ? null : prop || null;
+  }
+  // Pattern 4: X alone (Java implicit this — single identifier, no dots)
+  if (qualifier && !qualifier.includes(".")) {
+    return qualifier;
+  }
+  return null;
+}
+
+function resolvePropertyType(
+  call: CallSite,
+  allSymbols: Map<string, SymbolInfo[]>,
+  propertyTypeMap: Map<string, string>,
+): SymbolInfo | null {
+  const qualifier = call.calleeQualifier;
+  if (!qualifier) return null;
+
+  const propertyName = extractPropertyName(qualifier);
+  if (!propertyName) return null;
+
+  const callerClass = call.callerClass;
+  if (!callerClass) return null;
+
+  const key = `${callerClass}.${propertyName}`;
+  const typeName = propertyTypeMap.get(key);
+  if (!typeName) return null;
+
+  // Find a Method on the target type with the matching name
+  for (const [, symbols] of allSymbols) {
+    for (const s of symbols) {
+      if (s.label === "Method" && s.className === typeName && s.name === call.calleeName) {
+        return s;
+      }
+    }
+  }
+
+  return null;
 }
 
 // ─── Built-in / Global Filter ────────────────────────────────
@@ -1404,7 +1852,10 @@ export async function buildCallGraph(
 
     const allResolvedCalls: ResolvedCall[] = [];
     const allInheritance: InheritanceInfo[] = [];
+    const allCallSitesByFile = new Map<string, CallSite[]>();
+    const propertyTypeMap = new Map<string, string>(); // "ClassName.propertyName" -> typeName
 
+    // Pass 1: Extract call sites, inheritance, and property types from all files
     for (let i = 0; i < callGraphFiles.length; i++) {
       const file = callGraphFiles[i];
 
@@ -1427,13 +1878,36 @@ export async function buildCallGraph(
         continue;
       }
 
-      // Extract call sites and inheritance using language-specific dispatcher
-      const { callSites, inheritance } = extractLanguageCallData(
+      const { callSites, inheritance, propertyTypes } = extractLanguageCallData(
         tree.rootNode, file.relativePath, file.language,
       );
       allInheritance.push(...inheritance);
+      allCallSitesByFile.set(file.relativePath, callSites);
 
-      // Resolve calls for this file
+      // Accumulate property type mappings
+      for (const pt of propertyTypes) {
+        propertyTypeMap.set(`${pt.className}.${pt.propertyName}`, pt.typeName);
+      }
+
+      if (i % 20 === 0 || i === callGraphFiles.length - 1) {
+        const progress = 88 + ((i + 1) / callGraphFiles.length) * 4;
+        onProgress?.(
+          Math.round(progress),
+          `Extracting calls: ${i + 1}/${callGraphFiles.length} (${propertyTypeMap.size} property types)`,
+        );
+      }
+    }
+
+    logger.info(
+      { graphName, propertyTypes: propertyTypeMap.size },
+      "Property type extraction complete",
+    );
+
+    // Pass 2: Resolve calls (propertyTypeMap is now fully populated)
+    for (const file of callGraphFiles) {
+      const callSites = allCallSitesByFile.get(file.relativePath);
+      if (!callSites || callSites.length === 0) continue;
+
       const fileSyms = allSymbols.get(file.relativePath) ?? [];
       const importedFiles = fileImports.get(file.relativePath) ?? new Set<string>();
 
@@ -1443,19 +1917,13 @@ export async function buildCallGraph(
         allSymbols,
         importedFiles,
         file.relativePath,
+        propertyTypeMap,
       );
       allResolvedCalls.push(...resolved);
-
       filesProcessed++;
-
-      if (i % 20 === 0 || i === callGraphFiles.length - 1) {
-        const progress = 88 + ((i + 1) / callGraphFiles.length) * 7;
-        onProgress?.(
-          Math.round(progress),
-          `Analyzing calls: ${i + 1}/${callGraphFiles.length} (${allResolvedCalls.length} calls, ${allInheritance.length} classes)`,
-        );
-      }
     }
+
+    onProgress?.(95, `Resolved ${allResolvedCalls.length} calls across ${filesProcessed} files`);
 
     logger.info(
       {
