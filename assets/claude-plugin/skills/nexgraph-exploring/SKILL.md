@@ -18,7 +18,7 @@ description: "Use when the user asks how code works, wants to understand archite
 ```
 1. READ nexgraph://repos                             -> Discover indexed repos
 2. READ nexgraph://repos/{repo}/stats                -> Scale overview (nodes, edges, files)
-3. query({query: "<what you want to understand>"})   -> Find related symbols
+3. query({keyword: "<what you want to understand>"})   -> Find related symbols
 4. context({symbol: "<key symbol>"})                 -> Deep dive: callers, callees, imports
 5. trace({start_symbol: "<entry>"})                  -> Map execution flow end-to-end
 6. read_file({path: "<file>"})                       -> Read actual implementation
@@ -51,7 +51,7 @@ description: "Use when the user asks how code works, wants to understand archite
 **query** -- find symbols related to a concept:
 
 ```
-query({query: "payment processing"})
+query({keyword: "payment processing"})
 -> Matches: processPayment (Function, src/payments/processor.ts)
             PaymentService (Class, src/payments/service.ts)
             chargeStripe (Function, src/payments/stripe.ts)
@@ -74,7 +74,7 @@ context({symbol: "processPayment"})
 1. READ nexgraph://repos/{repo}/stats
    -> 2847 nodes, 9123 edges, 385 files
 
-2. query({query: "payment processing"})
+2. query({keyword: "payment processing"})
    -> processPayment, PaymentService, chargeStripe, RefundHandler
 
 3. context({symbol: "processPayment"})

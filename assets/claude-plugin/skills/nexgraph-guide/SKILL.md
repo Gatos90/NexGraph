@@ -83,7 +83,7 @@ RETURN caller.name, caller.file_path
 ```
 1. READ nexgraph://repos                          -> discover repos
 2. graph_stats()                                   -> confirm graph health
-3. query({query: "concept"})                       -> find symbol candidates
+3. query({keyword: "concept"})                       -> find symbol candidates
 4. context({symbol: "topCandidate"})               -> 360-degree view
 5. read_file({path: "src/relevant/file.ts"})       -> implementation detail
 6. impact({symbol: "target"})                      -> before proposing edits

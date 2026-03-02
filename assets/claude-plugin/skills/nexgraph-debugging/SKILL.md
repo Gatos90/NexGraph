@@ -16,8 +16,8 @@ description: "Use when the user is debugging a bug, tracing an error, or asking 
 ## Workflow
 
 ```
-1. search({query: "<error or symptom>", mode: "hybrid"})  -> Find related code by content
-2. query({query: "<suspect symbol>"})                      -> Locate symbols in the graph
+1. search({keyword: "<error or symptom>", mode: "hybrid"})  -> Find related code by content
+2. query({keyword: "<suspect symbol>"})                      -> Locate symbols in the graph
 3. context({symbol: "<suspect>"})                          -> See callers/callees
 4. trace({start_symbol: "<failing>", direction: "backward"}) -> Trace upstream callers
 5. read_file({path: "<file>", start_line: N, end_line: M}) -> Confirm root cause in source
@@ -51,7 +51,7 @@ description: "Use when the user is debugging a bug, tracing an error, or asking 
 **search** -- find code related to an error:
 
 ```
-search({query: "payment validation error", mode: "hybrid"})
+search({keyword: "payment validation error", mode: "hybrid"})
 -> src/payments/validator.ts:42 :: validatePayment
    "throws PaymentValidationError when card is expired"
 -> src/payments/handler.ts:88 :: handlePaymentError
@@ -78,7 +78,7 @@ RETURN [n IN nodes(path) | n.name] AS chain
 ## Example: "Payment endpoint returns 500 intermittently"
 
 ```
-1. search({query: "payment error handling", mode: "hybrid"})
+1. search({keyword: "payment error handling", mode: "hybrid"})
    -> validatePayment (src/payments/validator.ts)
    -> handlePaymentError (src/payments/handler.ts)
 

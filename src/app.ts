@@ -99,7 +99,7 @@ export function createApp() {
     openapi: "3.1.0",
     info: {
       title: "NexGraph API",
-      version: "0.1.0",
+      version: "0.3.0",
       description:
         "Headless Code Intelligence Engine — Build Knowledge Graphs, Let AI Agents Consume Them",
     },
