@@ -866,13 +866,11 @@ describe("E2E file-based: Go (struct fields)", () => {
       readFixture("go", "handler.go"),
     ]);
 
-    const dbTree = parser.parse(dbSrc);
+    parser.parse(dbSrc); // verify parse doesn't crash
     const handlerTree = parser.parse(handlerSrc);
 
     // Extract property types
-    const dbProps = extractGoPropertyTypes(dbTree.rootNode, "database.go");
     const handlerProps = extractGoPropertyTypes(handlerTree.rootNode, "handler.go");
-    const allProps = [...dbProps, ...handlerProps];
 
     // Handler struct has db, cache, logger — all pointers stripped
     expect(handlerProps.find(p => p.propertyName === "db")?.typeName).toBe("store.Database");
@@ -949,13 +947,11 @@ describe("E2E file-based: Rust (struct fields + impl blocks)", () => {
       readFixture("rust", "app.rs"),
     ]);
 
-    const servicesTree = parser.parse(servicesSrc);
+    parser.parse(servicesSrc); // verify parse doesn't crash
     const appTree = parser.parse(appSrc);
 
     // Extract property types
-    const servicesProps = extractRustPropertyTypes(servicesTree.rootNode, "services.rs");
     const appProps = extractRustPropertyTypes(appTree.rootNode, "app.rs");
-    const allProps = [...servicesProps, ...appProps];
 
     // AppState struct has auth, db, mailer
     expect(appProps.find(p => p.propertyName === "auth")?.typeName).toBe("AuthService");

@@ -1840,7 +1840,7 @@ export class AppComponent {
   }
 }`;
 
-    const serviceTree = parser.parse(serviceSource);
+    parser.parse(serviceSource); // parsed to verify it doesn't crash
     const componentTree = parser.parse(componentSource);
 
     // Extract property types from component
