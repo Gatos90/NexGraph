@@ -601,6 +601,7 @@ async function handleFullIndexing(
         { jobId, err },
         "Phase 8 (embeddings) failed, continuing without embeddings",
       );
+      await updateJobStatus(jobId, "running", { last_completed_phase: "embeddings" });
     }
   }
 }
@@ -925,6 +926,7 @@ async function handleIncrementalIndexing(
       { jobId, err },
       "Phase 8 (incremental embeddings) failed, continuing without embeddings",
     );
+    await updateJobStatus(jobId, "running", { last_completed_phase: "embeddings" });
   }
 }
 
