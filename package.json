@@ -1,6 +1,6 @@
 {
   "name": "nexgraph",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Headless Code Intelligence Engine — Build Knowledge Graphs, Let AI Agents Consume Them",
   "type": "module",
   "license": "MIT",
